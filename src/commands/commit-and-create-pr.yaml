@@ -1,0 +1,97 @@
+description: |
+  Commit changes in repository and create pull request.
+  CircleCI job must have read and write permission to the repository.
+parameters:
+  github-cli-version:
+    description: "GitHub CLI version."
+    type: string
+    default: "0.11.0"
+  dir:
+    description: Path to git repository.
+    type: string
+    default: /tmp/repo
+  github-user-name:
+    description: GitHub user name who commit changes and create PR.
+    type: string
+  github-user-email:
+    description: GitHub user email who commit changes and create PR.
+    type: string
+  github-oauth-token:
+    description: |
+      OAuth token for GitHub CLI.
+      Please run GitHub CLI locally and authenticate OAuth and copy OAuth token to CircleCI environment variables.
+      You can see details about GitHub CLI at https://cli.github.com/ .
+    type: env_var_name
+    default: GITHUB_OAUTH_TOKEN
+  branch-name:
+    description: Git branch name which changes will be commit to.
+    type: string
+  commit-message:
+    description: Commit message
+    type: string
+  pr-title:
+    description: PR title.
+    type: string
+  pr-body:
+    description: PR description body.
+    type: string
+  pr-merge:
+    description: Merge PR automatically.
+    type: boolean
+    default: false
+  pr-merge-type:
+    description: Method to merge PR . You can choose merge, rebase, squash.
+    type: string
+    default: merge
+steps:
+- run:
+    name: Install GitHub CLI
+    command: |
+      if [ ! $(gh) ]; then
+        apt update
+        apt install -y curl
+        curl -OL https://github.com/cli/cli/releases/download/v<<parameters.github-cli-version>>/gh_<<parameters.github-cli-version>>_linux_amd64.deb
+        apt install ./gh_<<parameters.github-cli-version>>_linux_amd64.deb
+      fi
+- run:
+    name: Configure GitHub CLI
+    command: |
+      mkdir ${HOME}/.config/gh -p
+      cd ${HOME}/.config/gh
+      echo "git_protocol: ssh" >> config.yml
+      cat \<<EOF > hosts.yml
+      github.com:
+          user: <<parameters.github-user-name>>
+          oauth_token: $<<parameters.github-oauth-token>>
+      EOF
+- run:
+    name: Git config
+    command: |
+      cd <<parameters.dir>>
+      git config user.name "<<parameters.github-user-name>>"
+      git config user.email "<<parameters.github-user-email>>"
+- run:
+    name: Git commit and push
+    command: |
+      cd <<parameters.dir>>
+      git checkout -b <<parameters.branch-name>>
+      git add .
+      git commit -m "<<parameters.commit-message>>"
+      git push origin <<parameters.branch-name>>
+- run:
+    name: Create PullRequest
+    command: |
+      cd <<parameters.dir>>
+      gh pr create --title "<<parameters.pr-title>>" --body "<<parameters.pr-body>>"
+- when:
+    condition: <<parameters.pr-merge>>
+    steps:
+    - run:
+        name: Wait PullRequest creation completed
+        command: |
+          sleep 10
+    - run:
+        name: Merge PullRequest
+        command: |
+          cd <<parameters.dir>>
+          gh pr merge --<<parameters.pr-merge-type>>

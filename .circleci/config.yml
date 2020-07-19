@@ -1,0 +1,44 @@
+version: 2.1
+orbs:
+  orb-tools: circleci/orb-tools@9.2.1
+  circleci-cli: circleci/circleci-cli@0.1.8
+jobs:
+  test:
+    machine: true
+    steps:
+    - checkout
+    - circleci-cli/install
+    - run: cp tests/jobs src -r
+    - run: cp tests/commands/* src/commands
+    - orb-tools/pack
+    - run: circleci local execute -c orb.yml -v $HOME/.ssh:/root/.ssh -e GITHUB_OAUTH_TOKEN=$GITHUB_OAUTH_TOKEN
+  publish-dev:
+    executor: circleci-cli/default
+    steps:
+    - checkout
+    - orb-tools/pack
+    - orb-tools/publish:
+        orb-ref: shibataka000/gitops@dev:${CIRCLE_BRANCH}
+  publish:
+    executor: circleci-cli/default
+    steps:
+    - checkout
+    - orb-tools/pack
+    - orb-tools/publish:
+        orb-ref: shibataka000/gitops@${CIRCLE_TAG}
+workflows:
+  build:
+    jobs:
+    - publish-dev
+    - test:
+        filters:
+          tags:
+            only: /[0-9]+\.[0-9]+\.[0-9]+/
+    - publish:
+        requires:
+        - test
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /[0-9]+\.[0-9]+\.[0-9]+/

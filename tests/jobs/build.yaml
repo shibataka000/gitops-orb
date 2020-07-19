@@ -1,0 +1,18 @@
+executor: default
+steps:
+- setup-test-environment
+- clone-repository:
+    repo: git@github.com:shibataka000/gitops-orb-test-manifest.git
+- update-image:
+    path: /
+    current-image-name: myapp
+    new-image-name: myapp
+    new-image-tag: ${CIRCLE_SHA1}
+- commit-and-create-pr:
+    github-user-name: shibataka000
+    github-user-email: chise.alter.pasta@gmail.com
+    branch-name: test-${CIRCLE_SHA1}
+    commit-message: "[test] update image tag to ${CIRCLE_SHA1}"
+    pr-title: "[test] update myapp image tag to ${CIRCLE_SHA1}"
+    pr-body: "Update myapp image tag to ${CIRCLE_SHA1}"
+    pr-merge: true

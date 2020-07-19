@@ -1,0 +1,2 @@
+version: 2.1
+description: Update container image tag in manifests repository according to GitOps.

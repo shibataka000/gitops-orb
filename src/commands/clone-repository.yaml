@@ -1,0 +1,16 @@
+description: Clone git repository.
+parameters:
+  repo:
+    description: |
+      Git repository URL.
+      CircleCI job must have read and write permission to this repository.
+      If you want to clone repository with SSH key like deploy key or user key, please set "git@github.com:<owner>/<repo>.git" format URL.
+    type: string
+  dir:
+    description: Local path which git repository clone to.
+    type: string
+    default: /tmp/repo
+steps:
+- run:
+    name: Clone git repository
+    command: git clone <<parameters.repo>> <<parameters.dir>>

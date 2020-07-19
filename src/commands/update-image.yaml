@@ -1,0 +1,38 @@
+description: Update image tag in manifests with kustomize.
+parameters:
+  kustomize-version:
+    description: Kustomize version.
+    type: string
+    default: "v3.8.1"
+  dir:
+    description: Path to git repository.
+    type: string
+    default: /tmp/repo
+  path:
+    description: Path to parent directory of kustomization.yaml in repository.
+    type: string
+    default: /
+  current-image-name:
+    description: Current image name.
+    type: string
+  new-image-name:
+    description: New image name.
+    type: string
+  new-image-tag:
+    description: New image tag.
+    type: string
+steps:
+- run:
+    name: Install kustomize
+    command: |
+      if [ ! $(kustomize) ]; then
+        apt update
+        apt install -y curl
+        curl -OL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F<<parameters.kustomize-version>>/kustomize_<<parameters.kustomize-version>>_linux_amd64.tar.gz
+        tar zxvf kustomize_<<parameters.kustomize-version>>_linux_amd64.tar.gz -C /usr/local/bin
+      fi
+- run:
+    name: Update image in manifest
+    command: |
+      cd <<parameters.dir>>/<<parameters.path>>
+      kustomize edit set image <<parameters.current-image-name>>=<<parameters.new-image-name>>:<<parameters.new-image-tag>>

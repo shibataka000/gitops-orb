@@ -1,0 +1,12 @@
+description: Setup test environment.
+steps:
+- run:
+    name: install git
+    command: |
+      apt update
+      apt install -y git
+- run:
+    name: add github public key to known_hosts
+    command: |
+      mkdir $HOME/.ssh -p 
+      ssh-keyscan github.com >> $HOME/.ssh/known_hosts
